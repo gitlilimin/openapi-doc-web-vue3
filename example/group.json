@@ -1,0 +1,14 @@
+[
+    {
+        "name": "用户端",
+        "link": "http://www.xxx.com/index/getApiDocJson?group=weappapi"
+    },
+    {
+        "name": "后台管理端",
+        "link": "http://www.xxx.com/index/getApiDocJson?group=adminapi"
+    },
+    {
+        "name": "公共接口",
+        "link": "http://www.xxx.com/index/getApiDocJson?group=commonapi"
+    }
+]
