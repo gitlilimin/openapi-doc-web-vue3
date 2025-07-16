@@ -8,8 +8,10 @@
                 <QuestionCircleOutlined />
             </div>
             <template v-if="width >= 800">
-                <div class="ml-2 mr-4">OpenApi Doc</div>
-                <div class="mr-4 text-sm">v {{ pkg?.version }}</div>
+                <div class="ml-2 mr-4 leading-tight">
+                    <div>OpenApi Doc</div>
+                    <div class="text-[10px] text-gray-500">v {{ pkg?.version }}</div>
+                </div>
                 <a href="https://gitee.com/lilimin/open-api-doc-vue3/stargazers" target="_blank">
                     <img
                         src="https://gitee.com/lilimin/open-api-doc-vue3/badge/star.svg?theme=white"
