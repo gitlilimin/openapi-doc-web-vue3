@@ -21,6 +21,20 @@ export const useAppStore = defineStore('app', {
         return {
             urlParams,
             storeSetting,
+            /** 请求参数 */
+            requestSetting: {
+                post: {
+                    contentType: 'application/json', // 默认的Content-Type
+                    contentTypeOptions: [
+                        { label: 'application/json', value: 'application/json' },
+                        {
+                            label: 'application/x-www-form-urlencoded',
+                            value: 'application/x-www-form-urlencoded',
+                        },
+                        { label: 'multipart/form-data', value: 'multipart/form-data' },
+                    ],
+                },
+            },
         }
     },
     getters: {},

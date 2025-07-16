@@ -65,7 +65,7 @@
                         :api-groups="apidata.groups"
                         :current-group="currentApiGroup"
                         @change-group="(e) => (apidata.current_group_index = e.index)"
-                        @click-params-tool="GlobalParamsToolRef?.open()"
+                        @click-params-tool="SettingModalRef?.open()"
                     />
                 </a-layout-header>
                 <a-layout-content
@@ -87,7 +87,7 @@
             </a-layout>
         </a-layout>
 
-        <GlobalParamsTool ref="GlobalParamsToolRef" />
+        <SettingModal ref="SettingModalRef" />
     </a-config-provider>
 </template>
 
@@ -101,12 +101,11 @@ import zh_Cn from 'ant-design-vue/es/locale/zh_CN'
 import SideMenu from '@/components/side-menu/index.vue'
 import TopMenu from '@/components/top-menu/index.vue'
 import PageContent from '@/components/page-conetent/index.vue'
-import GlobalParamsTool from '@/components/global-params-tool/index.vue'
+import SettingModal from '@/components/setting-modal/index.vue'
 
-import { Swagger } from '@/constants/swagger'
+import type { Swagger } from '@/constants/swagger'
 
-import { OriginApiGroup } from '@/constants/app'
-import { Tag, GlobalParam } from '@/constants/app'
+import type { OriginApiGroup, Tag } from '@/constants/app'
 import { SearchOutlined } from '@ant-design/icons-vue'
 import { useAppStore } from '@/stores/app'
 
@@ -114,7 +113,7 @@ const appStore = useAppStore()
 
 // refs
 const PageContentRef = ref()
-const GlobalParamsToolRef = ref()
+const SettingModalRef = ref()
 
 // 全局配置
 const app = reactive({

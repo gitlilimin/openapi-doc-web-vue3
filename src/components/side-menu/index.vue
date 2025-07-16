@@ -25,9 +25,8 @@
     </div>
 </template>
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Swagger } from '@/constants/swagger'
-import { Tag } from '@/constants/app'
+import type { Swagger } from '@/constants/swagger'
+import type { Tag } from '@/constants/app'
 
 interface Operation extends Swagger.Operation3 {}
 

@@ -93,7 +93,25 @@
                             />
                             <a-table-column key="debug" title="调试" :width="320">
                                 <template #default="{ record }">
-                                    <a-input v-model:value="record._debug_value" />
+                                    <a-switch
+                                        v-if="record.schema?.type === 'boolean'"
+                                        v-model:checked="record._debug_value"
+                                    />
+                                    <a-textarea
+                                        v-else-if="
+                                            ['array', 'object'].includes(record.schema?.type)
+                                        "
+                                        v-model:value="record._debug_value"
+                                    />
+                                    <a-input
+                                        v-else
+                                        v-model:value="record._debug_value"
+                                        :type="
+                                            ['number', 'integer'].includes(record.schema?.type)
+                                                ? 'number'
+                                                : 'text'
+                                        "
+                                    />
                                 </template>
                             </a-table-column>
                         </a-table>
@@ -104,21 +122,20 @@
     </div>
 </template>
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted, type PropType } from 'vue'
 import clipboard from 'clipboard'
 import axios from 'axios'
 import { cloneDeep } from 'lodash-es'
 import { message } from 'ant-design-vue'
 import { strFirstToUpper } from '@/libs/tools'
-import { Tag } from '@/constants/app'
-import { Swagger } from '@/constants/swagger'
+import type { Tag } from '@/constants/app'
+import type { Swagger } from '@/constants/swagger'
 import { useAppStore } from '@/stores/app'
 
 interface Operation extends Swagger.Operation3 {}
 
 const props = defineProps({
     tags: {
-        type: Array as PropType<any[]>,
+        type: Array as PropType<Tag[]>,
         default: () => [],
     },
     loading: {
@@ -177,11 +194,32 @@ watch(
     (tags) => {
         let result = cloneDeep(tags)
         result.forEach((tag) => {
-            Object.keys(tag.paths).forEach((path_name) => {
-                Object.keys(tag.paths[path_name]).forEach((opt_name) => {
-                    tag.paths[path_name][opt_name].parameters.forEach((param) => {
-                        param._debug_value = param.schema?.example
-                    })
+            Object.keys(tag.paths).forEach((pathStr) => {
+                Object.keys(tag.paths[pathStr]).forEach((methodName) => {
+                    tag.paths[pathStr][methodName].parameters.forEach(
+                        (param: Operation & { _debug_value?: any; schema: Swagger.Schema3 }) => {
+                            // 对array/object特殊处理
+                            param._debug_value = param.schema?.example
+                            const paramType = param.schema?.type || 'string'
+
+                            if (paramType == 'boolean') {
+                                param._debug_value = !!param.schema?.example
+                            } else if (['array', 'object'].includes(paramType)) {
+                                param._debug_value =
+                                    'example' in param.schema && param.schema.example !== null
+                                        ? JSON.stringify(
+                                              param.schema?.example ??
+                                                  (param.schema.type == 'array' ? [] : {})
+                                          )
+                                        : undefined
+                            } else if (['number', 'integer'].includes(paramType)) {
+                                param._debug_value =
+                                    'example' in param.schema && param.schema.example !== null
+                                        ? Number(param.schema.example)
+                                        : undefined
+                            }
+                        }
+                    )
                 })
             })
         })
@@ -191,38 +229,77 @@ watch(
 )
 
 // 发起调试事件
-const sendDebug = (path, method, path_data) => {
+const sendDebug = (path, method, apiItemData) => {
     if (!props.server) return message.error('请先选择环境')
 
     let url = `${props.server.url}${path}`
 
-    let params = {}
-    let headers = {}
+    // 处理全局参数
+    let globalQuery = {}
+    let globalHeaders = {}
+    let globalBody = {}
 
     if (Array.isArray(appStore.storeSetting.globalParams)) {
         appStore.storeSetting.globalParams.forEach((p) => {
             if (p.in == 'query') {
-                params[p.name] = p.value
+                globalQuery[p.name] = p.value
             } else if (p.in == 'header') {
-                headers[p.name] = p.value
+                globalHeaders[p.name] = p.value
+            } else if (p.in == 'body') {
+                globalBody[p.name] = p.value
             }
         })
     }
 
-    if (Array.isArray(path_data.parameters)) {
-        path_data.parameters.forEach((p) => {
-            params[p.name] = p._debug_value
+    // 本接口设置的参数
+    let params = {}
+    if (Array.isArray(apiItemData.parameters)) {
+        apiItemData.parameters.forEach((p) => {
+            // 考虑参数类型，转换一下
+            const paramType = p.schema?.type || 'string'
+            if (p._debug_value === 'null') {
+                params[p.name] = null
+            } else if (paramType === 'number' || paramType === 'integer') {
+                params[p.name] =
+                    '_debug_value' in p && p._debug_value !== null
+                        ? Number(p._debug_value)
+                        : undefined
+            } else if (paramType === 'boolean') {
+                params[p.name] = Boolean(p._debug_value)
+            } else if (['array', 'object'].includes(paramType)) {
+                try {
+                    if ('_debug_value' in p && p._debug_value !== null) {
+                        params[p.name] = JSON.parse(p._debug_value)
+                    }
+                } catch (e) {
+                    params[p.name] = p._debug_value ? p._debug_value : undefined
+                    message.warning(`注意 ${p.name} 的值不是合法的JSON格式，将以字符串形式发送`)
+                }
+            } else {
+                params[p.name] = p._debug_value
+            }
         })
     }
 
+    if (['post', 'put', 'patch'].includes(method.toLowerCase())) {
+        axios({
+            url,
+            method,
+            params: globalQuery,
+            data: { ...globalBody, ...params },
+            headers: {
+                ...globalHeaders,
+                'Content-Type': appStore.requestSetting.post.contentType || 'application/json',
+            },
+        })
+            .then((res) => console.log('请求成功', res.data))
+            .catch((e) => console.log('请求失败', e))
+    } else {
+        axios({ url, method, params: globalQuery, headers: globalHeaders })
+            .then((res) => console.log('请求成功', res.data))
+            .catch((e) => console.log('请求失败', e))
+    }
     message.success('发起请求成功，详情参见Console或Network')
-    axios({ url, method: 'post', params, headers })
-        .then((res) => {
-            console.log('请求成功', res.data)
-        })
-        .catch((e) => {
-            console.log('请求失败', e)
-        })
 }
 
 watch(current_active_path, (path) => {

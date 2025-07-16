@@ -9,10 +9,21 @@
             </div>
             <template v-if="width >= 800">
                 <div class="ml-2 mr-4">OpenApi Doc</div>
+                <div class="mr-4 text-sm">v {{ pkg?.version }}</div>
                 <a href="https://gitee.com/lilimin/open-api-doc-vue3/stargazers" target="_blank">
                     <img
                         src="https://gitee.com/lilimin/open-api-doc-vue3/badge/star.svg?theme=white"
-                        alt="star"
+                        alt="Gitee Stars"
+                    />
+                </a>
+                <a
+                    href="https://github.com/gitlilimin/openapi-doc-web-vue3"
+                    target="_blank"
+                    class="ml-2"
+                >
+                    <img
+                        src="https://img.shields.io/github/stars/gitlilimin/openapi-doc-web-vue3?style=social"
+                        alt="GitHub Stars"
                     />
                 </a>
             </template>
@@ -65,7 +76,6 @@
     </div>
 </template>
 <script setup lang="ts">
-import { ref } from 'vue'
 import { useWindowSize } from '@vueuse/core'
 import {
     DoubleLeftOutlined,
@@ -73,9 +83,10 @@ import {
     QuestionCircleOutlined,
     SendOutlined,
 } from '@ant-design/icons-vue'
-import { Swagger } from '@/constants/swagger'
-import { OriginApiGroup } from '@/constants/app'
+import type { Swagger } from '@/constants/swagger'
+import type { OriginApiGroup } from '@/constants/app'
 import QuestionModal from '@/components/question-modal/index.vue'
+import pkg from '@/../package.json'
 
 const props = withDefaults(
     defineProps<{

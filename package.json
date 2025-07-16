@@ -1,6 +1,6 @@
 {
     "name": "open-api-doc-vue3",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "scripts": {
         "dev": "vite",
         "build": "run-p type-check build-only",
